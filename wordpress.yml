@@ -1,0 +1,58 @@
+---
+- hosts: all
+  handlers:
+    - name: restart apache
+      service:
+         name: apache2
+         state: restarted
+      become: yes
+  tasks:
+    - name: 'Install all packages'
+      apt:
+        name: ['python-pymysql','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','libmcrypt-dev','php-pear','mariadb-server','python-mysqldb','php7.2-mysql']
+        state: latest
+      become: yes
+    - name: 'Create database'
+      mysql_db:
+        name: wordpress_db
+        login_user: root
+        state: present
+      become: yes
+    - name: 'Create username of database'
+      mysql_user:
+        name: wordpress_user
+        login_user: root
+        password: test123
+        priv: 'wordpress_db.*:ALL'
+        state: present
+    - name: 'Download Wordpress'
+      get_url:
+        url: 'https://br.wordpress.org/latest-pt_BR.tar.gz'
+        dest: '/tmp/wordpress.tar.gz'
+    - name: 'Uncompress'
+      unarchive:
+        src: '/tmp/wordpress.tar.gz'
+        dest: '/var/www'
+        remote_src: yes
+      become: yes
+    - copy:
+        src: '/var/www/wordpress/wp-config-sample.php'
+        dest: '/var/www/wordpress/wp-config.php'
+        remote_src: yes
+      become: yes
+    - replace:
+        path: '/var/www/wordpress/wp-config.php'
+        regexp: '{{ item.regex }}'
+        replace: '{{ item.value }}'
+        backup: yes
+      with_items:
+        - { regex: 'nome_do_banco_de_dados_aqui', value: 'wordpress_db' }
+        - { regex: 'nome_de_usuario_aqui', value: 'wordpress_user' }
+        - { regex: 'senha_aqui', value: 'test123' }
+      become: yes
+    - copy:
+        src: '000-default.conf'
+        dest: '/etc/apache2/sites-available/000-default.conf'
+      become: yes
+      notify:
+        - restart apache
