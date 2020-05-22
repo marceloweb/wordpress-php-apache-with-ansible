@@ -49,9 +49,9 @@
         replace: '{{ item.value }}'
         backup: yes
       with_items:
-        - { regex: 'nome_do_banco_de_dados_aqui', value: 'wordpress_db' }
-        - { regex: 'nome_de_usuario_aqui', value: 'wordpress_user' }
-        - { regex: 'senha_aqui', value: 'test123' }
+        - { regex: 'database_name_here', value: 'wordpress_db' }
+        - { regex: 'database_name_here', value: 'wordpress_user' }
+        - { regex: 'password_here', value: 'test123' }
       become: yes
     - copy:
         src: '000-default.conf'
