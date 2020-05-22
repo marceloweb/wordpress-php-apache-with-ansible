@@ -7,6 +7,9 @@
          state: restarted
       become: yes
   tasks:
+    - name: 'Update cache'
+      apt: update_cache=yes
+      become: yes
     - name: 'Install all packages'
       apt:
         name: ['python-pymysql','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','libmcrypt-dev','php-pear','mariadb-server','python-mysqldb','php7.2-mysql']
@@ -27,7 +30,7 @@
         state: present
     - name: 'Download Wordpress'
       get_url:
-        url: 'https://br.wordpress.org/latest-pt_BR.tar.gz'
+        url: 'https://wordpress.org/latest.tar.gz'
         dest: '/tmp/wordpress.tar.gz'
     - name: 'Uncompress'
       unarchive:
