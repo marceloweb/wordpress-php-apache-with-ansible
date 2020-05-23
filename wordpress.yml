@@ -10,6 +10,16 @@
     - name: 'Update cache'
       apt: update_cache=yes
       become: yes
+    - name: 'Install Pip3'
+      apt:
+        name: ['python3-pip']
+        state: latest
+      become: yes
+    - name: Make sure pymysql is present
+      become: true # needed if the other tasks are not played as root
+      pip:
+        name: pymysql
+        state: present
     - name: 'Install all packages'
       apt:
         name: ['python-pymysql','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','libmcrypt-dev','php-pear','mariadb-server','python-mysqldb','php7.2-mysql']
@@ -18,16 +28,19 @@
     - name: 'Create database'
       mysql_db:
         name: wordpress_db
+        login_unix_socket: '/var/run/mysqld/mysqld.sock'
         login_user: root
         state: present
       become: yes
     - name: 'Create username of database'
       mysql_user:
-        name: wordpress_user
         login_user: root
-        password: test123
+        login_password: test123
+        name: wordpress_user
+        password: test123 
         priv: 'wordpress_db.*:ALL'
         state: present
+      become: true
     - name: 'Download Wordpress'
       get_url:
         url: 'https://wordpress.org/latest.tar.gz'
