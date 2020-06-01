@@ -39,7 +39,7 @@
       become: yes
     - name: 'Configure permissions MySQL'
       copy:
-        src: '50-server.cnf'
+        src: 'includes/50-server.cnf'
         dest: '/etc/mysql/mariadb.conf.d/50-server.cnf' 
       become: yes
       notify:
@@ -89,7 +89,7 @@
         - { regex: 'localhost', value: '52.188.6.200' }
       become: yes
     - copy:
-        src: '000-default.conf'
+        src: 'includes/000-default.conf'
         dest: '/etc/apache2/sites-available/000-default.conf'
       become: yes
       notify:
