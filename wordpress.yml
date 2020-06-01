@@ -1,5 +1,12 @@
 ---
 - hosts: database
+  handlers:
+    - name: restart mysql
+      service:
+         name: mysql
+         state: restarted
+      become: yes
+
   tasks:
     - name: 'Update cache'
       apt: update_cache=yes
@@ -24,7 +31,19 @@
         password: test123
         priv: 'wordpress_db.*:ALL'
         state: present
-      become: true
+        host: "{{ item }}"        
+      with_items:
+        - 'localhost'
+        - '127.0.0.1'
+        - '40.121.4.178'
+      become: yes
+    - name: 'Configure permissions MySQL'
+      copy:
+        src: '50-server.cnf'
+        dest: '/etc/mysql/mariadb.conf.d/50-server.cnf' 
+      become: yes
+      notify:
+        - restart mysql
 
 - hosts: wordpress
   handlers:
@@ -35,9 +54,12 @@
       become: yes
 
   tasks:
+    - name: 'Update cache'
+      apt: update_cache=yes
+      become: yes
     - name: 'Install all packages'
       apt:
-        name: ['php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','php-pear','php7.2-mysql']
+        name: ['python-pymysql','libmcrypt-dev','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','php-pear','php7.2-mysql','python-mysqldb']
         state: latest
       become: yes
     - name: 'Download Wordpress'
@@ -64,6 +86,7 @@
         - { regex: 'database_name_here', value: 'wordpress_db' }
         - { regex: 'username_here', value: 'wordpress_user' }
         - { regex: 'password_here', value: 'test123' }
+        - { regex: 'localhost', value: '52.188.6.200' }
       become: yes
     - copy:
         src: '000-default.conf'
