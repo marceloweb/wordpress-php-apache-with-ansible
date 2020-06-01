@@ -1,46 +1,45 @@
 ---
-- hosts: all
+- hosts: database
+  tasks:
+    - name: 'Update cache'
+      apt: update_cache=yes
+      become: yes
+    - name: 'Install all packages'
+      apt:
+        name: ['python-pymysql','libmcrypt-dev','mariadb-server','python-mysqldb']
+        state: latest
+      become: yes
+    - name: 'Create database'
+      mysql_db:
+        login_unix_socket: '/var/run/mysqld/mysqld.sock'
+        name: wordpress_db
+        login_user: root
+        state: present
+      become: yes
+    - name: 'Create username of database'
+      mysql_user:
+        login_unix_socket: '/var/run/mysqld/mysqld.sock'
+        login_user: root
+        name: wordpress_user
+        password: test123
+        priv: 'wordpress_db.*:ALL'
+        state: present
+      become: true
+
+- hosts: wordpress
   handlers:
     - name: restart apache
       service:
          name: apache2
          state: restarted
       become: yes
+
   tasks:
-    - name: 'Update cache'
-      apt: update_cache=yes
-      become: yes
-    - name: 'Install Pip3'
-      apt:
-        name: ['python3-pip']
-        state: latest
-      become: yes
-    - name: Make sure pymysql is present
-      become: true # needed if the other tasks are not played as root
-      pip:
-        name: pymysql
-        state: present
     - name: 'Install all packages'
       apt:
-        name: ['python-pymysql','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','libmcrypt-dev','php-pear','mariadb-server','python-mysqldb','php7.2-mysql']
+        name: ['php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','php-pear','php7.2-mysql']
         state: latest
       become: yes
-    - name: 'Create database'
-      mysql_db:
-        name: wordpress_db
-        login_unix_socket: '/var/run/mysqld/mysqld.sock'
-        login_user: root
-        state: present
-      become: yes
-    - name: 'Create username of database'
-      mysql_user:
-        login_user: root
-        login_password: test123
-        name: wordpress_user
-        password: test123 
-        priv: 'wordpress_db.*:ALL'
-        state: present
-      become: true
     - name: 'Download Wordpress'
       get_url:
         url: 'https://wordpress.org/latest.tar.gz'
@@ -63,7 +62,7 @@
         backup: yes
       with_items:
         - { regex: 'database_name_here', value: 'wordpress_db' }
-        - { regex: 'database_name_here', value: 'wordpress_user' }
+        - { regex: 'username_here', value: 'wordpress_user' }
         - { regex: 'password_here', value: 'test123' }
       become: yes
     - copy:
