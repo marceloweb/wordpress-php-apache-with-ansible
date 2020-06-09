@@ -19,7 +19,7 @@
     - name: 'Create database'
       mysql_db:
         login_unix_socket: '/var/run/mysqld/mysqld.sock'
-        name: wordpress_db
+        name: "{{ wp_db_name }}"
         login_user: root
         state: present
       become: yes
@@ -27,9 +27,9 @@
       mysql_user:
         login_unix_socket: '/var/run/mysqld/mysqld.sock'
         login_user: root
-        name: wordpress_user
+        name: "{{ wp_username }}"
         password: test123
-        priv: 'wordpress_db.*:ALL'
+        priv: "{{ wp_db_name }}.*:ALL"
         state: present
         host: "{{ item }}"        
       with_items:
@@ -83,8 +83,8 @@
         replace: '{{ item.value }}'
         backup: yes
       with_items:
-        - { regex: 'database_name_here', value: 'wordpress_db' }
-        - { regex: 'username_here', value: 'wordpress_user' }
+        - { regex: 'database_name_here', value: "{{ wp_db_name }}" }
+        - { regex: 'username_here', value: "{{ wp_username }}" }
         - { regex: 'password_here', value: 'test123' }
         - { regex: 'localhost', value: '52.188.6.200' }
       become: yes
