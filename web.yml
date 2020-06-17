@@ -1,0 +1,96 @@
+---
+- hosts: database
+  handlers:
+    - name: restart mysql
+      service:
+         name: mysql
+         state: restarted
+      become: yes
+
+  tasks:
+    - name: 'Update cache'
+      apt: update_cache=yes
+      become: yes
+    - name: 'Install all packages'
+      apt:
+        name: ['python-pymysql','libmcrypt-dev','mariadb-server','python-mysqldb']
+        state: latest
+      become: yes
+    - name: 'Create database'
+      mysql_db:
+        login_unix_socket: '/var/run/mysqld/mysqld.sock'
+        name: "{{ wp_db_name }}"
+        login_user: root
+        state: present
+      become: yes
+    - name: 'Create username of database'
+      mysql_user:
+        login_unix_socket: '/var/run/mysqld/mysqld.sock'
+        login_user: root
+        name: "{{ wp_username }}"
+        password: test123
+        priv: "{{ wp_db_name }}.*:ALL"
+        state: present
+        host: "{{ item }}"        
+      with_items:
+        - 'localhost'
+        - '127.0.0.1'
+        - '40.121.4.178'
+      become: yes
+    - name: 'Configure permissions MySQL'
+      copy:
+        src: 'includes/50-server.cnf'
+        dest: '/etc/mysql/mariadb.conf.d/50-server.cnf' 
+      become: yes
+      notify:
+        - restart mysql
+
+- hosts: wordpress
+  handlers:
+    - name: restart apache
+      service:
+         name: apache2
+         state: restarted
+      become: yes
+
+  tasks:
+    - name: 'Update cache'
+      apt: update_cache=yes
+      become: yes
+    - name: 'Install all packages'
+      apt:
+        name: ['python-pymysql','libmcrypt-dev','php7.2','apache2','php7.2-gd','libapache2-mod-php7.2','php-pear','php7.2-mysql','python-mysqldb']
+        state: latest
+      become: yes
+    - name: 'Download Wordpress'
+      get_url:
+        url: 'https://wordpress.org/latest.tar.gz'
+        dest: '/tmp/wordpress.tar.gz'
+    - name: 'Uncompress'
+      unarchive:
+        src: '/tmp/wordpress.tar.gz'
+        dest: '/var/www'
+        remote_src: yes
+      become: yes
+    - copy:
+        src: '/var/www/wordpress/wp-config-sample.php'
+        dest: '/var/www/wordpress/wp-config.php'
+        remote_src: yes
+      become: yes
+    - replace:
+        path: '/var/www/wordpress/wp-config.php'
+        regexp: '{{ item.regex }}'
+        replace: '{{ item.value }}'
+        backup: yes
+      with_items:
+        - { regex: 'database_name_here', value: "{{ wp_db_name }}" }
+        - { regex: 'username_here', value: "{{ wp_username }}" }
+        - { regex: 'password_here', value: 'test123' }
+        - { regex: 'localhost', value: '52.188.6.200' }
+      become: yes
+    - copy:
+        src: 'includes/000-default.conf'
+        dest: '/etc/apache2/sites-available/000-default.conf'
+      become: yes
+      notify:
+        - restart apache
