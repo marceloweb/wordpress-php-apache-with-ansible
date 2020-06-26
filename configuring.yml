@@ -10,16 +10,11 @@
          name: apache2
          state: restarted
       become: yes
+  roles:
+    - webserver
+
 
   tasks:
-    - name: 'Update cache'
-      apt: update_cache=yes
-      become: yes
-    - name: 'Install all packages'
-      apt:
-        name: ['python-pymysql','libmcrypt-dev','php7.0','apache2','php7.0-gd','libapache2-mod-php7.0','php-pear','php7.0-mysql','python-mysqldb']
-        state: latest
-      become: yes
     - name: 'Download Wordpress'
       get_url:
         url: 'https://wordpress.org/latest.tar.gz'
