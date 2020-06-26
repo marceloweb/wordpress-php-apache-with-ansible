@@ -33,7 +33,7 @@
 
 - name: 'Configure permissions MySQL'
   copy:
-    src: 'includes/50-server.cnf'
+    src: 'files/50-server.cnf'
     dest: '/etc/mysql/mariadb.conf.d/50-server.cnf'
   become: yes
   notify:
