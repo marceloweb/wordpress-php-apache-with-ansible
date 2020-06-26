@@ -1,0 +1,40 @@
+---
+- name: 'Update cache'
+  apt: update_cache=yes
+  become: yes
+- name: 'Install all packages'
+  apt:
+    name: ['python-pymysql','libmcrypt-dev','mariadb-server','python-mysqldb']
+    state: latest
+  become: yes
+
+- name: 'Create database'
+  mysql_db:
+    login_unix_socket: '/var/run/mysqld/mysqld.sock'
+    name: "{{ wp_db_name }}"
+    login_user: root
+    state: present
+  become: yes
+
+- name: 'Create username of database'
+  mysql_user:
+    login_unix_socket: '/var/run/mysqld/mysqld.sock'
+    login_user: root
+    name: "{{ wp_username }}"
+    password: "{{ wp_user_password }}"
+    priv: "{{ wp_db_name }}.*:ALL"
+    state: present
+    host: "{{ item }}"
+  with_items:
+    - 'localhost'
+    - '127.0.0.1'
+    - "{{ wp_host_ip }}"
+  become: yes
+
+- name: 'Configure permissions MySQL'
+  copy:
+    src: 'includes/50-server.cnf'
+    dest: '/etc/mysql/mariadb.conf.d/50-server.cnf'
+  become: yes
+  notify:
+    - restart mysql
